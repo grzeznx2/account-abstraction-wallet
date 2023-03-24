@@ -35,6 +35,8 @@ interface IEntryPoint {
 
     error ValidationResultWithAggregation(ReturnInfo returnInfo, StakeInfo senderInfo, StakeInfo factoryInfo, StakeInfo paymasterInfo, AggregatorStakeInfo aggregatorInfo);
 
+    error FailedOp(uint256 opIndex, string reason);
+
     function handleOps(UserOperation[] calldata ops, address payable beneficiary) external;
 
     function handleAggregatedOps(UserOpsPerAggregator[] calldata opsPerAggregator, address payable beneficiary) external;
