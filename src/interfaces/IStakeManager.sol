@@ -15,7 +15,7 @@ interface IStakeManager {
 
     event StakeLocked (
         address indexed account,
-        uint256 totalDeposited,
+        uint256 totalStaked,
         uint256 unstakeDelaySec
     );
 

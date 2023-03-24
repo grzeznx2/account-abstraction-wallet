@@ -16,4 +16,44 @@ contract StakeManager is IStakeManager {
         info.stake = depositInfo.stake;
         info.unstakeDelaySec = depositInfo.unstakeDelaySec;
     }
+
+    function balanceOf(address account) public view returns (uint256){
+        return deposits[account].deposit;
+    }
+
+    receive() external payable {
+        depositTo(msg.sender);
+    }
+
+    function _incrementDeposit(address account, uint256 amount) internal {
+        DepositInfo storage depositInfo = deposits[account];
+        uint256 newAmount = depositInfo.deposit + amount;
+        require(newAmount <= type(uint112).max, "deposit overflow");
+        depositInfo.deposit = uint112(newAmount);
+    }
+
+    function depositTo(address account) public payable {
+        _incrementDeposit(account, msg.value);
+        DepositInfo storage depositInfo = deposits[account];
+        emit Deposited(account, depositInfo.deposit);
+    }
+
+    function addStake(uint32 unstakeDelaySec) public payable {
+        // *** opt
+        require(unstakeDelaySec > 0, "must specify unstake delay");
+        DepositInfo storage info = deposits[msg.sender];
+        require(unstakeDelaySec >= info.unstakeDelaySec, "cannot decrease unstake delay");
+        uint256 stake = info.stake + msg.value;
+        require(stake > 0, "no stake specified");
+        require(stake <= type(uint112).max, "stake overflow");
+        deposits[msg.sender] = DepositInfo(
+            info.deposit,
+            true,
+            uint112(stake),
+            unstakeDelaySec,
+            0
+        );
+
+        emit StakeLocked(msg.sender, stake, unstakeDelaySec);
+    }
 }
