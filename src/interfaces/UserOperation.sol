@@ -14,3 +14,13 @@ struct UserOperation {
     bytes paymasterAndData;
     bytes signature;
 }
+
+library UserOperationLib{
+    function getSender(UserOperation calldata userOp) internal pure returns(address){
+        address data;
+        assembly {
+            data := calldataload(userOp)
+        }
+        return address(uint160(data));
+    }
+}
