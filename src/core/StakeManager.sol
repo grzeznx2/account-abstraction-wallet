@@ -80,4 +80,13 @@ contract StakeManager is IStakeManager {
         (bool success,) = withdrawAddress.call{value: stake}("");
         require(success, "failed to withdraw stake");
     }
+
+    function withdrawTo(address payable withdrawAddress, uint256 withdrawAmount) external {
+        DepositInfo storage info = deposits[msg.sender];
+        require(info.deposit >= withdrawAmount, "withdraw amount too large");
+        info.deposit = uint112(info.deposit - withdrawAmount);
+        emit Withdrawn(msg.sender, withdrawAddress, withdrawAmount);
+        (bool success, ) = withdrawAddress.call{value: withdrawAmount}("");
+        require(success, "failed to withdraw deposit");
+    }
 }
