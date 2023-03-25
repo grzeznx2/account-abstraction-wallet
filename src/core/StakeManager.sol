@@ -56,4 +56,28 @@ contract StakeManager is IStakeManager {
 
         emit StakeLocked(msg.sender, stake, unstakeDelaySec);
     }
+
+    function unlockStake() external {
+        DepositInfo storage info = deposits[msg.sender];
+        require(info.unstakeDelaySec != 0, "not staked");
+        require(info.staked, "already unstaking");
+        uint48 withdrawTime = uint48(block.timestamp) + info.unstakeDelaySec;
+        info.staked = false;
+        info.withdrawTime = withdrawTime;
+        emit StakeUnlocked(msg.sender, withdrawTime);
+    }
+
+    function withdrawStake(address payable withdrawAddress) external {
+        DepositInfo storage info = deposits[msg.sender];
+        uint256 stake = info.stake;
+        require(stake > 0, "not stake to withdraw");
+        require(info.withdrawTime > 0, "must unstake first");
+        require(info.withdrawTime <= block.timestamp, "withdrawal not yet possible");
+        info.stake = 0;
+        info.withdrawTime = 0;
+        info.unstakeDelaySec = 0;
+        emit StakeWithdrawn(msg.sender, withdrawAddress, stake);
+        (bool success,) = withdrawAddress.call{value: stake}("");
+        require(success, "failed to withdraw stake");
+    }
 }
