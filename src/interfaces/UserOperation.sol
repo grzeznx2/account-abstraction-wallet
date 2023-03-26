@@ -23,4 +23,24 @@ library UserOperationLib{
         }
         return address(uint160(data));
     }
+
+    function pack(
+        UserOperation calldata userOp
+    ) internal pure returns (bytes memory ret) {
+        bytes calldata sig = userOp.signature;
+        assembly {
+            let ofs := userOp
+            let len := sub(sub(sig.offset, ofs), 32)
+            ret := mload(0x40)
+            mstore(0x40, add(ret, add(len, 32)))
+            mstore(ret, len)
+            calldatacopy(add(ret, 32), ofs, len)
+        }
+    }
+
+    function hash(
+        UserOperation calldata userOp
+    ) internal pure returns (bytes32) {
+        return keccak256(pack(userOp));
+    }
 }
