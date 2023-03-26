@@ -3,6 +3,8 @@ pragma solidity ^0.8.0;
 
 import "../interfaces/UserOperation.sol";
 import "../interfaces/IEntryPoint.sol";
+import "./SenderCreator.sol";
+
 
 contract EntryPoint is IEntryPoint {
 
@@ -24,6 +26,8 @@ contract EntryPoint is IEntryPoint {
         uint256 contextOffset;
         uint256 preOpGas;
     }
+
+    SenderCreator private immutable senderCreator = new SenderCreator();
 
     function _simulationOnlyValidations(UserOperation calldata userOp) internal view {
         try this._validateSenderAndPaymaster(userOp.initCode, userOp.sender, userOp.paymasterAndData){}
@@ -48,5 +52,24 @@ contract EntryPoint is IEntryPoint {
         }
 
         revert("");
+    }
+
+    function _getRequiredPrefund(MemoryUserOp memory mUserOp) internal view returns (uint256 requiredPrefund){
+        uint256 mul = mUserOp.paymaster != address(0) ? 3: 1;
+        uint256 requiredGas = mUserOp.callGasLimit + mUserOp.verificationGasLimit * mul + mUserOp.preVerificationGas;
+        requiredPrefund = requiredGas * mUserOp.maxFeePerGas;
+    }
+
+    function _createSenderIfNeeded(uint256 opIndex, UserOpInfo memory opInfo, bytes calldata initCode) internal {
+        if(initCode.length != 0){
+            address sender = opInfo.mUserOp.sender;
+            if(sender.code.length != 0) revert FailedOp(opIndex, "sender already constructed");
+            address newSender = senderCreator.createSender{gas: opInfo.mUserOp.verificationGasLimit}(initCode);
+            if(newSender == address(0)) revert FailedOp(opIndex, "initCode failed or OOG");
+            if(newSender != sender) revert FailedOp(opIndex, "initCode must return sender");
+            if(newSender.code.length == 0) revert FailedOp(opIndex, "initCode must create sender");
+            address factory = address(bytes20(initCode[0:20]));
+            emit AccountDeployed(opInfo.userOpHash, sender, factory, opInfo.mUserOp.paymaster);
+        }
     }
 }

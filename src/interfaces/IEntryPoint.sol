@@ -31,6 +31,8 @@ interface IEntryPoint {
         StakeInfo stakeInfo;
     }
 
+    event AccountDeployed(bytes32 indexed userOpHash, address indexed sender, address factory, address paymaster);
+
     error ValidationResult(ReturnInfo returnInfo, StakeInfo senderInfo, StakeInfo factoryInfo, StakeInfo paymasterInfo);
 
     error ValidationResultWithAggregation(ReturnInfo returnInfo, StakeInfo senderInfo, StakeInfo factoryInfo, StakeInfo paymasterInfo, AggregatorStakeInfo aggregatorInfo);
