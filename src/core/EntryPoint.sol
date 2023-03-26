@@ -6,7 +6,26 @@ import "../interfaces/IEntryPoint.sol";
 
 contract EntryPoint is IEntryPoint {
 
-    function _simulationOnlyValidation(UserOperation calldata userOp) internal view {
+    struct MemoryUserOp {
+        address sender;
+        uint256 nonce;
+        uint256 callGasLimit;
+        uint256 verificationGasLimit;
+        uint256 preVerificationGas;
+        address paymaster;
+        uint256 maxFeePerGas;
+        uint256 maxPriorityFeePerGas;
+    }
+
+    struct UserOpInfo {
+        MemoryUserOp mUserOp;
+        bytes32 userOpHash;
+        uint256 prefund;
+        uint256 contextOffset;
+        uint256 preOpGas;
+    }
+
+    function _simulationOnlyValidations(UserOperation calldata userOp) internal view {
         try this._validateSenderAndPaymaster(userOp.initCode, userOp.sender, userOp.paymasterAndData){}
         catch Error(string memory reason){
             if(bytes(reason).length != 0){
