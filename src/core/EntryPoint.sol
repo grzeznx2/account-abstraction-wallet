@@ -29,6 +29,10 @@ contract EntryPoint is IEntryPoint {
 
     SenderCreator private immutable senderCreator = new SenderCreator();
 
+    function getSenderAddress(bytes calldata initCode) public {
+        revert(SenderAddressResult(senderCreator.createSender(initCode)));
+    }
+
     function _simulationOnlyValidations(UserOperation calldata userOp) internal view {
         try this._validateSenderAndPaymaster(userOp.initCode, userOp.sender, userOp.paymasterAndData){}
         catch Error(string memory reason){
